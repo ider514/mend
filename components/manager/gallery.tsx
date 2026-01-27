@@ -20,7 +20,7 @@ export default function VerificationGallery() {
                 .eq('date', today)
                 .not('selfie_in', 'is', null)
 
-            const items = []
+            const items: any[] = []
             if (shifts) {
                 shifts.forEach(s => {
                     if (s.selfie_in) items.push({ url: s.selfie_in, type: 'Өглөө', user: s.profiles?.full_name, time: s.start_time, id: s.id + 'in' })
