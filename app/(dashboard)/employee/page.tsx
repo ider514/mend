@@ -33,5 +33,16 @@ export default async function Page() {
         .limit(1)
         .single()
 
-    return <EmployeeDashboard currentShift={currentShift} userId={user.id} todayReport={report} />
+    // Fetch system settings for GPS
+    const { data: settingsData } = await supabase
+        .from('system_settings')
+        .select('*')
+
+    // Convert array to object for easier access
+    const settingsMap = settingsData?.reduce((acc: any, curr: any) => {
+        acc[curr.key] = curr.value
+        return acc
+    }, {}) || {}
+
+    return <EmployeeDashboard currentShift={currentShift} userId={user.id} todayReport={report} settings={settingsMap} />
 }

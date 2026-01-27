@@ -2,11 +2,26 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { calculateDistance, FALLBACK_TARGET_LAT, FALLBACK_TARGET_LNG, FALLBACK_MAX_DISTANCE } from '@/lib/gps'
 
 export async function clockIn(lat: number, lng: number, selfieFormData: FormData) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
+
+    // Fetch system settings
+    const { data: settingsData } = await supabase.from('system_settings').select('*')
+    const settingsMap = settingsData?.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc }, {}) || {}
+
+    const targetLat = parseFloat(settingsMap['gps_target_lat'] || FALLBACK_TARGET_LAT)
+    const targetLng = parseFloat(settingsMap['gps_target_lng'] || FALLBACK_TARGET_LNG)
+    const maxDistance = parseFloat(settingsMap['gps_max_distance'] || FALLBACK_MAX_DISTANCE)
+
+    // Validate GPS
+    const distance = calculateDistance(lat, lng, targetLat, targetLng)
+    if (distance > maxDistance) {
+        return { error: `Too far from workplace. Distance: ${Math.round(distance)}m, Max: ${maxDistance}m` }
+    }
 
     // 1. Upload Selfie
     const file = selfieFormData.get('file') as File
@@ -49,6 +64,19 @@ export async function clockOut(shiftId: string, lat: number, lng: number, selfie
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
+
+    // Validate GPS (Optional for clock out? Usually yes for "on site" verification)
+    const { data: settingsData } = await supabase.from('system_settings').select('*')
+    const settingsMap = settingsData?.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc }, {}) || {}
+
+    const targetLat = parseFloat(settingsMap['gps_target_lat'] || FALLBACK_TARGET_LAT)
+    const targetLng = parseFloat(settingsMap['gps_target_lng'] || FALLBACK_TARGET_LNG)
+    const maxDistance = parseFloat(settingsMap['gps_max_distance'] || FALLBACK_MAX_DISTANCE)
+
+    const distance = calculateDistance(lat, lng, targetLat, targetLng)
+    if (distance > maxDistance) {
+        return { error: `Too far to clock out. Distance: ${Math.round(distance)}m` }
+    }
 
     const fileExt = file.name.split('.').pop()
     const fileName = `${user.id}/${Date.now()}-out.${fileExt}`

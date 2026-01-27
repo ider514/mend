@@ -1,6 +1,7 @@
-export const TARGET_LAT = 47.9224
-export const TARGET_LNG = 106.9311
-export const MAX_DISTANCE_METERS = 10000
+// Fallback defaults if DB settings are missing
+export const FALLBACK_TARGET_LAT = 47.9224
+export const FALLBACK_TARGET_LNG = 106.9311
+export const FALLBACK_MAX_DISTANCE = 10000
 
 function toRad(value: number) {
     return (value * Math.PI) / 180

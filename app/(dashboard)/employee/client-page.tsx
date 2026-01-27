@@ -5,22 +5,28 @@ import { CameraCapture } from '@/components/camera/camera-capture'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import LeadControl from './lead-control'
-import { calculateDistance, TARGET_LAT, TARGET_LNG, MAX_DISTANCE_METERS } from '@/lib/gps'
+import { calculateDistance, FALLBACK_TARGET_LAT, FALLBACK_TARGET_LNG, FALLBACK_MAX_DISTANCE } from '@/lib/gps'
 import { toast } from 'sonner'
 import { clockIn, clockOut, startBreak, endBreak } from './actions'
 import { Loader2, MapPin, Coffee, LogOut, CheckCircle2 } from 'lucide-react'
 
 interface EmployeePageProps {
-    currentShift: any // Typed properly in real app
+    currentShift: any
     userId: string
     todayReport: any
+    settings: any
 }
 
-export default function EmployeeDashboard({ currentShift, userId, todayReport }: EmployeePageProps) {
+export default function EmployeeDashboard({ currentShift, userId, todayReport, settings }: EmployeePageProps) {
     const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null)
     const [distance, setDistance] = useState<number | null>(null)
     const [loading, setLoading] = useState(false)
     const [view, setView] = useState<'idle' | 'camera-in' | 'camera-out'>('idle')
+
+    // Parse Settings
+    const targetLat = parseFloat(settings['gps_target_lat'] || FALLBACK_TARGET_LAT)
+    const targetLng = parseFloat(settings['gps_target_lng'] || FALLBACK_TARGET_LNG)
+    const maxDistance = parseFloat(settings['gps_max_distance'] || FALLBACK_MAX_DISTANCE)
 
     // GPS Watcher
     useEffect(() => {
@@ -33,7 +39,7 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport }:
             (position) => {
                 const { latitude, longitude } = position.coords
                 setLocation({ lat: latitude, lng: longitude })
-                const dist = calculateDistance(latitude, longitude, TARGET_LAT, TARGET_LNG)
+                const dist = calculateDistance(latitude, longitude, targetLat, targetLng)
                 setDistance(dist)
             },
             (error) => {
@@ -44,13 +50,13 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport }:
         )
 
         return () => navigator.geolocation.clearWatch(watchId)
-    }, [])
+    }, [targetLat, targetLng])
 
     const handleClockIn = async (file: File) => {
         if (!location) return toast.error('Байршил тодорхойгүй байна')
         // Re-check distance strictly before submit
-        if (distance && distance > MAX_DISTANCE_METERS) {
-            return toast.error(`Та ажлын байрнаас ${Math.round(distance)}м зайтай байна. 100м дотор байх ёстой.`)
+        if (distance && distance > maxDistance) {
+            return toast.error(`Та ажлын байрнаас ${Math.round(distance)}м зайтай байна. ${maxDistance}м дотор байх ёстой.`)
         }
 
         setLoading(true)
@@ -71,7 +77,7 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport }:
     const handleClockOut = async (file: File) => {
         if (!location) return toast.error('Байршил тодорхойгүй байна')
         // GPS check for clock out as well? Requirement says "Validation: GPS Check". Assuming both.
-        if (distance && distance > MAX_DISTANCE_METERS) {
+        if (distance && distance > maxDistance) {
             return toast.error(`Та ажлын байрнаас ${Math.round(distance)}м зайтай байна.`)
         }
 
@@ -137,11 +143,11 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport }:
                 <CardContent className="space-y-4">
                     {/* GPS Indicator */}
                     <div className={`flex items-center gap-2 text-sm p-3 rounded-md ${!location ? 'bg-yellow-100 text-yellow-800' :
-                        (distance && distance <= MAX_DISTANCE_METERS) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        (distance && distance <= maxDistance) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                         <MapPin className="w-4 h-4" />
                         {location ? (
-                            distance ? `Зай: ${Math.round(distance)}м (${distance <= MAX_DISTANCE_METERS ? 'Зөвшөөрөгдсөн' : 'Хэт хол'})` : 'Байршил тогтоож байна...'
+                            distance ? `Зай: ${Math.round(distance)}м (${distance <= maxDistance ? 'Зөвшөөрөгдсөн' : 'Хэт хол'})` : 'Байршил тогтоож байна...'
                         ) : 'GPS хайж байна...'}
                     </div>
 
@@ -150,7 +156,7 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport }:
                         <Button
                             className="w-full h-12 text-lg"
                             onClick={() => setView('camera-in')}
-                            disabled={!location || (distance !== null && distance > MAX_DISTANCE_METERS)}
+                            disabled={!location || (distance !== null && distance > maxDistance)}
                         >
                             Цаг бүртгүүлэх (Ирсэн)
                         </Button>
@@ -176,7 +182,7 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport }:
                                 variant="destructive"
                                 className="h-12"
                                 onClick={() => setView('camera-out')}
-                                disabled={!location || (distance !== null && distance > MAX_DISTANCE_METERS)}
+                                disabled={!location || (distance !== null && distance > maxDistance)}
                             >
                                 <LogOut className="mr-2 h-4 w-4" /> Гарах
                             </Button>
