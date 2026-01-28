@@ -8,16 +8,18 @@ import LeadControl from './lead-control'
 import { calculateDistance, FALLBACK_TARGET_LAT, FALLBACK_TARGET_LNG, FALLBACK_MAX_DISTANCE } from '@/lib/gps'
 import { toast } from 'sonner'
 import { clockIn, clockOut, startBreak, endBreak } from './actions'
-import { Loader2, MapPin, Coffee, LogOut, CheckCircle2 } from 'lucide-react'
+import { format, differenceInMinutes, parseISO } from 'date-fns'
+import { History, Loader2, MapPin, Coffee, LogOut, CheckCircle2 } from 'lucide-react'
 
 interface EmployeePageProps {
     currentShift: any
     userId: string
     todayReport: any
     settings: any
+    pastShifts: any[]
 }
 
-export default function EmployeeDashboard({ currentShift, userId, todayReport, settings }: EmployeePageProps) {
+export default function EmployeeDashboard({ currentShift, userId, todayReport, settings, pastShifts }: EmployeePageProps) {
     const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null)
     const [distance, setDistance] = useState<number | null>(null)
     const [loading, setLoading] = useState(false)
@@ -110,6 +112,17 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport, s
         return (
             <div className="p-4 max-w-md mx-auto space-y-4">
                 <Button variant="ghost" onClick={() => setView('idle')}>Буцах</Button>
+
+                {/* GPS Indicator */}
+                <div className={`flex items-center gap-2 text-sm p-3 rounded-md ${!location ? 'bg-yellow-100 text-yellow-800' :
+                    (distance && distance <= maxDistance) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                    <MapPin className="w-4 h-4" />
+                    {location ? (
+                        distance ? `Зай: ${Math.round(distance)}м (${distance <= maxDistance ? 'Зөвшөөрөгдсөн' : 'Хэт хол'})` : 'Байршил тогтоож байна...'
+                    ) : 'GPS хайж байна...'}
+                </div>
+
                 <CameraCapture onCapture={handleClockIn} label="Цаг бүртгэх (Selfie)" />
                 {loading && <div className="text-center"><Loader2 className="animate-spin inline mr-2" /> Уншиж байна...</div>}
             </div>
@@ -120,6 +133,17 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport, s
         return (
             <div className="p-4 max-w-md mx-auto space-y-4">
                 <Button variant="ghost" onClick={() => setView('idle')}>Буцах</Button>
+
+                {/* GPS Indicator */}
+                <div className={`flex items-center gap-2 text-sm p-3 rounded-md ${!location ? 'bg-yellow-100 text-yellow-800' :
+                    (distance && distance <= maxDistance) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                    <MapPin className="w-4 h-4" />
+                    {location ? (
+                        distance ? `Зай: ${Math.round(distance)}м (${distance <= maxDistance ? 'Зөвшөөрөгдсөн' : 'Хэт хол'})` : 'Байршил тогтоож байна...'
+                    ) : 'GPS хайж байна...'}
+                </div>
+
                 <CameraCapture onCapture={handleClockOut} label="Гарах (Selfie)" />
                 {loading && <div className="text-center"><Loader2 className="animate-spin inline mr-2" /> Уншиж байна...</div>}
             </div>
@@ -136,20 +160,12 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport, s
                     <CardTitle>Миний төлөв</CardTitle>
                     <CardDescription>
                         {currentShift ?
-                            (currentShift.end_time ? 'Та ажлаа дуусгасан байна.' : 'Ажил дээр')
-                            : 'Та ажилдаа ирээгүй байна.'}
+                            (currentShift.end_time ? 'Ажлын цаг дууссан байна.' : 'Ажил дээр')
+                            : 'Ажлын цаг эхлээгүй байна.'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {/* GPS Indicator */}
-                    <div className={`flex items-center gap-2 text-sm p-3 rounded-md ${!location ? 'bg-yellow-100 text-yellow-800' :
-                        (distance && distance <= maxDistance) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                        <MapPin className="w-4 h-4" />
-                        {location ? (
-                            distance ? `Зай: ${Math.round(distance)}м (${distance <= maxDistance ? 'Зөвшөөрөгдсөн' : 'Хэт хол'})` : 'Байршил тогтоож байна...'
-                        ) : 'GPS хайж байна...'}
-                    </div>
+
 
                     {/* Actions */}
                     {!currentShift && (
@@ -193,6 +209,56 @@ export default function EmployeeDashboard({ currentShift, userId, todayReport, s
 
             {/* Lead Control Section */}
             <LeadControl userId={userId} todayReport={todayReport} />
+
+            {/* Shift History Section */}
+            <Card>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <History className="w-4 h-4" />
+                        <span>Сүүлийн ээлжүүд</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {pastShifts.length === 0 ? (
+                            <div className="text-sm text-zinc-500">Түүх олдсонгүй.</div>
+                        ) : (
+                            pastShifts.map((shift) => {
+                                const start = parseISO(shift.start_time)
+                                const end = shift.end_time ? parseISO(shift.end_time) : null
+                                const durationMinutes = end ? differenceInMinutes(end, start) : 0
+                                const hours = Math.floor(durationMinutes / 60)
+                                const minutes = durationMinutes % 60
+
+                                const isToday = new Date().toDateString() === start.toDateString()
+
+                                return (
+                                    <div key={shift.id} className="flex justify-between items-center text-sm border-b border-zinc-100 dark:border-zinc-800 last:border-0 pb-3 last:pb-0">
+                                        <div>
+                                            <div className="font-medium">
+                                                {format(start, 'MM/dd')}
+                                                {isToday && <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">Өнөөдөр</span>}
+                                            </div>
+                                            <div className="text-xs text-zinc-500">
+                                                {format(start, 'HH:mm')} - {end ? format(end, 'HH:mm') : '...'}
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            {end ? (
+                                                <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                                                    {hours}ц {minutes}м
+                                                </div>
+                                            ) : (
+                                                <div className="text-green-600 font-medium text-xs">Идэвхтэй</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
         </div>
     )

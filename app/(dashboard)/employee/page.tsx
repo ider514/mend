@@ -44,5 +44,15 @@ export default async function Page() {
         return acc
     }, {}) || {}
 
-    return <EmployeeDashboard currentShift={currentShift} userId={user.id} todayReport={report} settings={settingsMap} />
+    // Fetch past shifts for history (last 5)
+    // We want shifts that are NOT today, or maybe just all completed shifts?
+    // Let's just get last 5 shifts ordered by date desc
+    const { data: pastShifts } = await supabase
+        .from('shifts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('start_time', { ascending: false })
+        .limit(5)
+
+    return <EmployeeDashboard currentShift={currentShift} userId={user.id} todayReport={report} settings={settingsMap} pastShifts={pastShifts || []} />
 }

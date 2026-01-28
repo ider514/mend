@@ -21,6 +21,7 @@ export default function LeadControl({ userId, todayReport }: { userId: string, t
     // Captured times (HH:MM string)
     const [distributorTime, setDistributorTime] = useState<string | null>(null)
     const [salesTime, setSalesTime] = useState<string | null>(null)
+    const [showJarPrep, setShowJarPrep] = useState(false)
 
     const [loading, setLoading] = useState(false)
     const supabase = createClient()
@@ -141,10 +142,9 @@ export default function LeadControl({ userId, todayReport }: { userId: string, t
 
     return (
         <Card className="border-zinc-200 dark:border-zinc-800">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-1">
                 <CardTitle className="text-base flex justify-between items-center">
                     <span>Тайлан</span>
-                    {currentLead === userId && <Crown className="w-5 h-5 text-yellow-500 fill-yellow-500" />}
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -155,35 +155,38 @@ export default function LeadControl({ userId, todayReport }: { userId: string, t
                 ) : currentLead === userId ? (
                     <div className="space-y-6">
                         {/* Delivery Section */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button
-                                variant={distributorTime ? "default" : "outline"}
-                                onClick={() => openDeliveryDialog('distributor')}
-                                disabled={loading || isReportSubmitted} // Disable editing if already fully submitted
-                                className="h-auto py-3 flex flex-col gap-1 items-start px-4 relative"
-                            >
-                                <Truck className="w-5 h-5 mb-1" />
-                                <span className="text-xs font-semibold">Дистрибьютор</span>
-                                {distributorTime && (
-                                    <span className="text-[10px] opacity-90 absolute top-2 right-2 bg-white/20 px-1 rounded">
-                                        {distributorTime}
-                                    </span>
-                                )}
-                            </Button>
-                            <Button
-                                variant={salesTime ? "default" : "outline"}
-                                onClick={() => openDeliveryDialog('sales')}
-                                disabled={loading || isReportSubmitted}
-                                className="h-auto py-3 flex flex-col gap-1 items-start px-4 relative"
-                            >
-                                <ShoppingBag className="w-5 h-5 mb-1" />
-                                <span className="text-xs font-semibold">Шууд борлуулалт</span>
-                                {salesTime && (
-                                    <span className="text-[10px] opacity-90 absolute top-2 right-2 bg-white/20 px-1 rounded">
-                                        {salesTime}
-                                    </span>
-                                )}
-                            </Button>
+                        <div>
+                            <div className="text-sm font-medium text-zinc-500 mb-2">Хүргэлтийн цаг бүртгэх</div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
+                                    variant={distributorTime ? "default" : "outline"}
+                                    onClick={() => openDeliveryDialog('distributor')}
+                                    disabled={loading || isReportSubmitted} // Disable editing if already fully submitted
+                                    className="h-auto py-3 flex flex-col gap-1 items-start px-4 relative"
+                                >
+                                    <Truck className="w-5 h-5 mb-1" />
+                                    <span className="text-xs font-semibold">Миру</span>
+                                    {distributorTime && (
+                                        <span className="text-[10px] opacity-90 absolute top-2 right-2 bg-white/20 px-1 rounded">
+                                            {distributorTime}
+                                        </span>
+                                    )}
+                                </Button>
+                                <Button
+                                    variant={salesTime ? "default" : "outline"}
+                                    onClick={() => openDeliveryDialog('sales')}
+                                    disabled={loading || isReportSubmitted}
+                                    className="h-auto py-3 flex flex-col gap-1 items-start px-4 relative"
+                                >
+                                    <ShoppingBag className="w-5 h-5 mb-1" />
+                                    <span className="text-xs font-semibold">Онлайн хүргэлт</span>
+                                    {salesTime && (
+                                        <span className="text-[10px] opacity-90 absolute top-2 right-2 bg-white/20 px-1 rounded">
+                                            {salesTime}
+                                        </span>
+                                    )}
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Report Section */}
@@ -197,47 +200,88 @@ export default function LeadControl({ userId, todayReport }: { userId: string, t
                                     {/* Show times in summary too */}
                                     {distributorTime && (
                                         <div className="bg-zinc-50 p-3 rounded-lg">
-                                            <div className="text-zinc-500 text-xs mb-1">Дистрибьютор</div>
+                                            <div className="text-zinc-500 text-xs mb-1">Миру Хүргэлт</div>
                                             <div className="font-bold">{distributorTime}</div>
                                         </div>
                                     )}
                                     {salesTime && (
                                         <div className="bg-zinc-50 p-3 rounded-lg">
-                                            <div className="text-zinc-500 text-xs mb-1">Борлуулалт</div>
+                                            <div className="text-zinc-500 text-xs mb-1">Онлайн хүргэлт</div>
                                             <div className="font-bold">{salesTime}</div>
                                         </div>
                                     )}
 
                                     <div className="bg-zinc-50 p-3 rounded-lg">
-                                        <div className="text-zinc-500 text-xs mb-1">MendMoss (S)</div>
-                                        <div className="font-bold text-lg">{todayReport.mendmoss_s}</div>
-                                    </div>
-                                    <div className="bg-zinc-50 p-3 rounded-lg">
-                                        <div className="text-zinc-500 text-xs mb-1">MendMoss (M)</div>
+                                        <div className="text-zinc-500 text-xs mb-1">Mendmoss (M)</div>
                                         <div className="font-bold text-lg">{todayReport.mendmoss_m}</div>
                                     </div>
                                     <div className="bg-zinc-50 p-3 rounded-lg">
-                                        <div className="text-zinc-500 text-xs mb-1">MendHusk (S)</div>
-                                        <div className="font-bold text-lg">{todayReport.mendhusk_s}</div>
+                                        <div className="text-zinc-500 text-xs mb-1">Mendmoss (S)</div>
+                                        <div className="font-bold text-lg">{todayReport.mendmoss_s}</div>
                                     </div>
                                     <div className="bg-zinc-50 p-3 rounded-lg">
-                                        <div className="text-zinc-500 text-xs mb-1">MendHusk (M)</div>
+                                        <div className="text-zinc-500 text-xs mb-1">Mendhusk (M)</div>
                                         <div className="font-bold text-lg">{todayReport.mendhusk_m}</div>
+                                    </div>
+                                    <div className="bg-zinc-50 p-3 rounded-lg">
+                                        <div className="text-zinc-500 text-xs mb-1">Mendhusk (S)</div>
+                                        <div className="font-bold text-lg">{todayReport.mendhusk_s}</div>
                                     </div>
                                     <div className="bg-zinc-50 p-3 rounded-lg col-span-2">
                                         <div className="text-zinc-500 text-xs mb-1">Шил угаалт</div>
-                                        <div className="font-bold">{todayReport.jars_s} (S) / {todayReport.jars_m} (M)</div>
+                                        <div className="font-bold">{todayReport.jars_m} (M) / {todayReport.jars_s} (S)</div>
                                     </div>
-                                    {todayReport.jar_photo_url && (
-                                        <div className="col-span-2 text-xs text-blue-600 underline cursor-pointer" onClick={() => window.open(todayReport.jar_photo_url, '_blank')}>
-                                            Зураг харах
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         ) : (
                             <form id="report-form" onSubmit={handleSubmitReport} className="space-y-4 pt-4 border-t">
-                                <FormContent />
+                                <div className="text-sm font-medium text-zinc-500 mb-2">Нийт үйлдвэрлэсэн тоо бүртгэх</div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Mendmoss+</Label>
+                                        <Input type="number" name="mendmoss_m" placeholder="0" min="0" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Mendmoss</Label>
+                                        <Input type="number" name="mendmoss_s" placeholder="0" min="0" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Mendhusk+</Label>
+                                        <Input type="number" name="mendhusk_m" placeholder="0" min="0" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Mendhusk</Label>
+                                        <Input type="number" name="mendhusk_s" placeholder="0" min="0" />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t">
+                                    <div className="flex items-center space-x-2 mb-4 bg-zinc-50 p-3 rounded-lg border border-zinc-100 dark:bg-zinc-900 dark:border-zinc-800">
+                                        <input
+                                            type="checkbox"
+                                            id="jar-prep-check"
+                                            className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                            checked={showJarPrep}
+                                            onChange={(e) => setShowJarPrep(e.target.checked)}
+                                        />
+                                        <Label htmlFor="jar-prep-check" className="cursor-pointer flex-1">Стикер наасан</Label>
+                                    </div>
+
+                                    {showJarPrep && (
+                                        <div className="grid grid-cols-2 gap-4 mb-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="space-y-2">
+                                                <Label>M шил хайрцаг</Label>
+                                                <Input type="number" name="jars_m" placeholder="Хайрцгийн тоо" min="0" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>S шил хайрцаг</Label>
+                                                <Input type="number" name="jars_s" placeholder="Хайрцгийн тоо" min="0" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <Button type="submit" className="w-full">Тайлан илгээх</Button>
                             </form>
                         )}
                     </div>
@@ -269,11 +313,11 @@ export default function LeadControl({ userId, todayReport }: { userId: string, t
                     <DialogHeader>
                         <DialogTitle>Цаг бүртгэх</DialogTitle>
                         <DialogDescription>
-                            Хүргэлт эхэлсэн цагийг оруулна уу.
+                            Хүргэлт гарсан цагийг оруулна уу.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                        <Label>Эхэлсэн цаг</Label>
+                        <Label>Хүргэлт гарсан цаг</Label>
                         <Input
                             type="time"
                             className="mt-2 text-lg h-12"
@@ -291,40 +335,4 @@ export default function LeadControl({ userId, todayReport }: { userId: string, t
     )
 }
 
-function FormContent() {
-    return (
-        <>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label>MendMoss (S)</Label>
-                    <Input type="number" name="mendmoss_s" placeholder="0" min="0" />
-                </div>
-                <div className="space-y-2">
-                    <Label>MendMoss (M)</Label>
-                    <Input type="number" name="mendmoss_m" placeholder="0" min="0" />
-                </div>
-                <div className="space-y-2">
-                    <Label>MendHusk (S)</Label>
-                    <Input type="number" name="mendhusk_s" placeholder="0" min="0" />
-                </div>
-                <div className="space-y-2">
-                    <Label>MendHusk (M)</Label>
-                    <Input type="number" name="mendhusk_m" placeholder="0" min="0" />
-                </div>
-            </div>
 
-            <div className="pt-2 border-t">
-                <Label className="mb-2 block">Шил угаалт / Бэлтгэл</Label>
-                <div className="grid grid-cols-2 gap-4 mb-2">
-                    <Input type="number" name="jars_s" placeholder="S шил тоо" min="0" />
-                    <Input type="number" name="jars_m" placeholder="M шил тоо" min="0" />
-                </div>
-                <div className="flex items-center gap-2">
-                    <Input type="file" name="jar_photo" accept="image/*" className="text-xs" />
-                </div>
-            </div>
-
-            <Button type="submit" className="w-full">Тайлан илгээх</Button>
-        </>
-    )
-}

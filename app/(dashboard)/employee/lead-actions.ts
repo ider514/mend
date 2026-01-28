@@ -112,18 +112,7 @@ export async function submitReport(formData: FormData) {
         sales_start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).toISOString()
     }
 
-    // Optional jar photo
-    let jar_photo_url = null
-    const file = formData.get('jar_photo') as File
-    if (file && file.size > 0) {
-        const fileExt = file.name.split('.').pop()
-        const fileName = `reports/${Date.now()}-jars.${fileExt}`
-        const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file)
-        if (!uploadError) {
-            const { data } = supabase.storage.from('reports').getPublicUrl(fileName)
-            jar_photo_url = data.publicUrl
-        }
-    }
+    // Jar photo upload removed per user request
 
     // Helper to build payload
     const payload: any = {
@@ -133,8 +122,7 @@ export async function submitReport(formData: FormData) {
         mendhusk_s,
         mendhusk_m,
         jars_s,
-        jars_m,
-        jar_photo_url
+        jars_m
     }
 
     if (distributor_start) payload.distributor_start = distributor_start
